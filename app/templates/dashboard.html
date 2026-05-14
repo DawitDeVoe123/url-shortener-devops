@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>URL Shortener</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔗 URL Shortener</h1>
+        <p>Create short, memorable links</p>
+
+        <div>
+            <textarea id="url" placeholder="Enter your long URL here..."></textarea>
+            <input type="text" id="custom_code" placeholder="Custom code (optional)">
+            <button onclick="shortenUrl()">Shorten URL</button>
+        </div>
+
+        <div id="result" class="result" style="display:none;"></div>
+    </div>
+
+    <script>
+        async function shortenUrl() {
+            const url = document.getElementById('url').value;
+            const custom_code = document.getElementById('custom_code').value;
+
+            if (!url) {
+                alert('Please enter a URL');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/shorten', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        url: url,
+                        custom_code: custom_code || null
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const resultDiv = document.getElementById('result');
+                    resultDiv.innerHTML = `✅ Short URL: <a href="${data.short_url}" target="_blank">${data.short_url}</a>`;
+                    resultDiv.style.display = 'block';
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + error.detail);
+                }
+            } catch (error) {
+                alert('Network error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+
+</html>
