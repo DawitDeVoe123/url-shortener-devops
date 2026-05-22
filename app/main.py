@@ -1,11 +1,13 @@
-from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi import FastAPI, Depends, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST, Counter, Histogram
 import secrets
 import os
+import time
 
 from app.database import get_db, engine
 from app.models import Base, Link, Click
@@ -16,12 +18,42 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(title="URL Shortener")
 templates = Jinja2Templates(directory="app/templates")
 
+# Prometheus metrics
+REQUEST_COUNT = Counter('http_requests_total', 'Total HTTP requests', ['method', 'endpoint', 'status'])
+REQUEST_DURATION = Histogram('http_request_duration_seconds', 'HTTP request duration', ['method', 'endpoint'])
+URLS_CREATED = Counter('urls_created_total', 'Total URLs created')
+REDIRECTS_TOTAL = Counter('redirects_total', 'Total redirects')
+
 class ShortenRequest(BaseModel):
     url: str
     custom_code: Optional[str] = None
 
 def generate_short_code(length=6):
     return secrets.token_urlsafe(length)[:length]
+
+@app.middleware("http")
+async def metrics_middleware(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    duration = time.time() - start_time
+    
+    REQUEST_COUNT.labels(
+        method=request.method,
+        endpoint=request.url.path,
+        status=response.status_code
+    ).inc()
+    
+    REQUEST_DURATION.labels(
+        method=request.method,
+        endpoint=request.url.path
+    ).observe(duration)
+    
+    return response
+
+@app.get("/metrics")
+async def get_metrics():
+    """Prometheus metrics endpoint"""
+    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
@@ -50,8 +82,10 @@ async def test_shorten_url(
     db.commit()
     db.refresh(link)
     
+    URLS_CREATED.inc()
+    
     return {
-        "short_url": f"http://localhost:8000/{short_code}",
+        "short_url": f"http://192.168.137.229:8000/{short_code}",
         "short_code": short_code,
         "original_url": request_data.url
     }
@@ -78,8 +112,10 @@ async def shorten_url(
     db.commit()
     db.refresh(link)
     
+    URLS_CREATED.inc()
+    
     return {
-        "short_url": f"http://localhost:8000/{short_code}",
+        "short_url": f"http://192.168.137.229:8000/{short_code}",
         "short_code": short_code,
         "original_url": request_data.url
     }
@@ -99,6 +135,8 @@ async def redirect_to_url(short_code: str, request: Request, db: Session = Depen
     db.add(click)
     link.clicks += 1
     db.commit()
+    
+    REDIRECTS_TOTAL.inc()
     
     return RedirectResponse(url=link.original_url)
 
