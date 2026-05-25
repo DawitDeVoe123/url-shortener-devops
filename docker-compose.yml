@@ -37,79 +37,79 @@ services:
       - pgadmin_data:/var/lib/pgadmin
     restart: unless-stopped
 
- # URL Shortener App
- # app:
-#    build: .
- #   ports:
-  #    - "8000:8000"
-   # environment:
-    #  - DATABASE_URL=postgresql://user:password@db:5432/shortener
-     # - KEYCLOAK_URL=http://keycloak:8080
-      #- KEYCLOAK_REALM=myrealm
- #     - KEYCLOAK_CLIENT_ID=url-shortener
-  #    - KEYCLOAK_CLIENT_SECRET=woqGC4HYkhiyRIUPz6fiAQ7dWUNgeNx5
-   #   - APP_URL=http://localhost:8000
-  #  volumes:
-   #   - ./app:/app/app
- #   command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-  #  restart: unless-stopped
- #   depends_on:
-  #    - db
-  #    - keycloak
-  #  networks:
-   #   - devops-network
+  # URL Shortener App
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/shortener
+      - KEYCLOAK_URL=http://keycloak:8080
+      - KEYCLOAK_REALM=myrealm
+      - KEYCLOAK_CLIENT_ID=url-shortener
+      - KEYCLOAK_CLIENT_SECRET=woqGC4HYkhiyRIUPz6fiAQ7dWUNgeNx5
+      - APP_URL=http://localhost:8000
+    volumes:
+      - ./app:/app/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
+    depends_on:
+      - db
+      - keycloak
+    networks:
+      - devops-network
 
   # Keycloak Authentication
-#  keycloak:
- #   image: quay.io/keycloak/keycloak:23.0
-  #  container_name: keycloak
- #   command: start-dev
- #   environment:
- #     - KEYCLOAK_ADMIN=admin
-  #    - KEYCLOAK_ADMIN_PASSWORD=admin
- #     - KC_DB=postgres
- #     - KC_DB_URL=jdbc:postgresql://db:5432/keycloak
-   #   - KC_DB_USERNAME=user
- #     - KC_DB_PASSWORD=password
- #     - KC_HOSTNAME=keycloak
- #     - KC_HOSTNAME_STRICT=false
- #     - KC_PROXY=edge
-  #    - KC_HTTP_ENABLED=true
- #   ports:
- #     - "8080:8080"
- #   restart: unless-stopped
- #   networks:
-  #    - devops-network
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    container_name: keycloak
+    command: start-dev
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_DB=postgres
+      - KC_DB_URL=jdbc:postgresql://db:5432/keycloak
+      - KC_DB_USERNAME=user
+      - KC_DB_PASSWORD=password
+      - KC_HOSTNAME=keycloak
+      - KC_HOSTNAME_STRICT=false
+      - KC_PROXY=edge
+      - KC_HTTP_ENABLED=true
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    networks:
+      - devops-network
 
   # WireGuard VPN
- # wireguard:
-#    image: weejewel/wg-easy:latest
-#    container_name: wireguard
- #   environment:
- #     - WG_HOST=localhost
- #     - PASSWORD=urlshortener2024
-  #    - WG_PORT=51820
- #     - WG_DEFAULT_ADDRESS=10.8.0.x
-  #    - WG_DEFAULT_DNS=1.1.1.1
-  #    - WG_ALLOWED_IPS=10.8.0.0/24,172.19.0.0/16,192.168.0.0/16
-  #  ports:
-  #    - "51820:51820/udp"
-  #    - "51821:51821/tcp"
-  #  volumes:
-  #    - wireguard_data:/etc/wireguard
-  #  cap_add:
-  #    - NET_ADMIN
-  #    - SYS_MODULE
-  #  sysctls:
-   #   - net.ipv4.conf.all.src_valid_mark=1
-    #  - net.ipv4.ip_forward=1
- #   restart: unless-stopped
-  #  networks:
-   #   - devops-network
+  wireguard:
+    image: weejewel/wg-easy:latest
+    container_name: wireguard
+    environment:
+      - WG_HOST=localhost
+      - PASSWORD=urlshortener2024
+      - WG_PORT=51820
+      - WG_DEFAULT_ADDRESS=10.8.0.x
+      - WG_DEFAULT_DNS=1.1.1.1
+      - WG_ALLOWED_IPS=10.8.0.0/24,172.19.0.0/16,192.168.0.0/16
+    ports:
+      - "51820:51820/udp"
+      - "51821:51821/tcp"
+    volumes:
+      - wireguard_data:/etc/wireguard
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv4.ip_forward=1
+    restart: unless-stopped
+    networks:
+      - devops-network
 
-#networks:
- # devops-network:
-  #  driver: bridge   
+networks:
+  devops-network:
+    driver: bridge   
 
 volumes:
   postgres_data:
