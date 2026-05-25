@@ -34,8 +34,8 @@ pipeline {
                 echo 'Starting PostgreSQL database...'
                 sh """
                 docker run -d \\
-                    --name test-db-${BUILD_NUMBER} \\
-                    --network ${NETWORK_NAME} \\
+                    --name test-db-\${BUILD_NUMBER} \\
+                    --network \${NETWORK_NAME} \\
                     -e POSTGRES_DB=shortener \\
                     -e POSTGRES_USER=user \\
                     -e POSTGRES_PASSWORD=password \\
@@ -44,11 +44,11 @@ pipeline {
                 echo 'Waiting for database to be ready...'
                 sh '''
                 for i in {1..30}; do
-                    if docker exec test-db-${BUILD_NUMBER} pg_isready -U user -d shortener; then
+                    if docker exec test-db-\${BUILD_NUMBER} pg_isready -U user -d shortener; then
                         echo "✅ Database is ready!"
                         break
                     fi
-                    echo "Waiting for database... ($i/30)"
+                    echo "Waiting for database... (\$i/30)"
                     sleep 2
                 done
                 '''
@@ -58,10 +58,10 @@ pipeline {
         stage('Build Image') {
             steps {
                 script {
-                    echo "Building Docker image: ${APP_NAME}:${IMAGE_TAG}"
+                    echo "Building Docker image: \${APP_NAME}:\${IMAGE_TAG}"
                     
                     // '.' means "build from the workspace root, where Dockerfile is"
-                    docker.build("${APP_NAME}:${IMAGE_TAG}", ".")
+                    docker.build("\${APP_NAME}:\${IMAGE_TAG}", ".")
                 }
             }
         }
@@ -73,21 +73,21 @@ pipeline {
                     
                     // Start the image in our test network
                     sh "docker run -d \\
-                        --name test-app-${BUILD_NUMBER} \\
-                        --network ${NETWORK_NAME} \\
-                        -e DATABASE_URL=postgresql://user:password@test-db-${BUILD_NUMBER}:5432/shortener \\
-                        ${APP_NAME}:${IMAGE_TAG}"
+                        --name test-app-\${BUILD_NUMBER} \\
+                        --network \${NETWORK_NAME} \\
+                        -e DATABASE_URL=postgresql://user:password@test-db-\${BUILD_NUMBER}:5432/shortener \\
+                        \${APP_NAME}:\${IMAGE_TAG}"
                     
                     // Wait 10 seconds for the app inside the container to start up
                     sh 'sleep 10'
                     
                     // Ask Jenkins to hit the app and check for a 200 OK response
                     echo 'Testing application health endpoint...'
-                    sh 'curl -f http://test-app-${BUILD_NUMBER}:8000/ || exit 1'
+                    sh 'curl -f http://test-app-\${BUILD_NUMBER}:8000/ || exit 1'
                     
                     // Additional endpoint tests
                     echo 'Testing API documentation endpoint...'
-                    sh 'curl -f http://test-app-${BUILD_NUMBER}:8000/docs || exit 1'
+                    sh 'curl -f http://test-app-\${BUILD_NUMBER}:8000/docs || exit 1'
                     
                     echo 'Testing URL shortening functionality...'
                     sh '''
@@ -113,7 +113,7 @@ pipeline {
         stage('Cleanup Network') {
             steps {
                 echo 'Cleaning up test network...'
-                sh "docker network rm ${NETWORK_NAME} || true"
+                sh "docker network rm \${NETWORK_NAME} || true"
                 echo '✅ Cleanup complete!'
             }
         }
