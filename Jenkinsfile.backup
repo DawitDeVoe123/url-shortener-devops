@@ -1,0 +1,73 @@
+pipeline {
+  agent any
+
+  environment {
+    APP_NAME  = 'url-shortener'
+    IMAGE_TAG = "${BUILD_NUMBER}"
+  }
+
+  tools {
+    docker 'docker'
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        echo 'Checking out code from GitHub...'
+        checkout scm
+      }
+    }
+
+    stage('Build Image') {
+      steps {
+        script {
+          echo "Building Docker image: ${APP_NAME}:${IMAGE_TAG}"
+
+          // '.' means "build from the workspace root, where Dockerfile is"
+          docker.build("${APP_NAME}:${IMAGE_TAG}", ".")
+        }
+      }
+    }
+
+    stage('Test Image') {
+      steps {
+        script {
+          echo "Running a quick test..."
+
+          // Start the image on port 8001 so it doesn't clash with anything
+          sh 'docker run -d -p 8001:8000 --name test-container ${APP_NAME}:${IMAGE_TAG}'
+
+          // Wait 5 seconds for the app inside the container to start up
+          sh 'sleep 5'
+
+          // Ask Jenkins to hit the app and check for a 200 OK response
+          sh 'curl -f http://localhost:8001/'
+
+          // Stop and remove the test container
+          sh 'docker stop test-container || true'
+          sh 'docker rm  test-container || true'
+        }
+      }
+    }
+
+    stage('Health Check') {
+      steps {
+        echo '=== PIPELINE COMPLETE ==='
+        echo "Built: ${APP_NAME}:${IMAGE_TAG}"
+      }
+    }
+  }
+
+  post {
+    always {
+      echo 'Cleaning up...'
+      sh 'docker rm -f test-container 2>/dev/null || true'
+    }
+    success {
+      echo "SUCCESS: ${APP_NAME}:${IMAGE_TAG}"
+    }
+    failure {
+      echo 'FAILED — see console output above'
+    }
+  }
+}
