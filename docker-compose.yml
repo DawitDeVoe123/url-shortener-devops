@@ -5,14 +5,15 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://user:password@192.168.137.244:5432/shortener
-      - KEYCLOAK_URL=http://192.168.137.229:8080
-      - KEYCLOAK_REALM=myrealm
-      - KEYCLOAK_CLIENT_ID=url-shortener
-      - KEYCLOAK_CLIENT_SECRET=woqGC4HYkhiyRIUPz6fiAQ7dWUNgeNx5
-      - APP_URL=http://192.168.137.229:8000
+      - DATABASE_URL=${DATABASE_URL}
+      - KEYCLOAK_URL=${KEYCLOAK_URL}
+      - KEYCLOAK_REALM=${KEYCLOAK_REALM}
+      - KEYCLOAK_CLIENT_ID=${KEYCLOAK_CLIENT_ID}
+      - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
+      - APP_URL=${APP_URL}
     volumes:
       - ./app:/app/app
+      - ./.env:/app/.env:ro
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     restart: unless-stopped
     depends_on:
@@ -26,16 +27,16 @@ services:
     container_name: keycloak
     command: start-dev
     environment:
-      - KEYCLOAK_ADMIN=admin
-      - KEYCLOAK_ADMIN_PASSWORD=admin
-      - KC_DB=postgres
-      - KC_DB_URL=jdbc:postgresql://192.168.137.244:5432/keycloak
-      - KC_DB_USERNAME=user
-      - KC_DB_PASSWORD=password
-      - KC_HOSTNAME=192.168.137.229
-      - KC_HOSTNAME_STRICT=false
-      - KC_PROXY=edge
-      - KC_HTTP_ENABLED=true
+      - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN:-admin}
+      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      - KC_DB=${KC_DB:-postgres}
+      - KC_DB_URL=${KC_DB_URL}
+      - KC_DB_USERNAME=${KC_DB_USERNAME}
+      - KC_DB_PASSWORD=${KC_DB_PASSWORD}
+      - KC_HOSTNAME=${KC_HOSTNAME}
+      - KC_HOSTNAME_STRICT=${KC_HOSTNAME_STRICT:-false}
+      - KC_PROXY=${KC_PROXY:-edge}
+      - KC_HTTP_ENABLED=${KC_HTTP_ENABLED:-true}
     ports:
       - "8080:8080"
     restart: unless-stopped
@@ -47,12 +48,12 @@ services:
     image: weejewel/wg-easy:latest
     container_name: wireguard
     environment:
-      - WG_HOST=192.168.137.229
-      - PASSWORD=urlshortener2024
-      - WG_PORT=51820
-      - WG_DEFAULT_ADDRESS=10.8.0.x
-      - WG_DEFAULT_DNS=1.1.1.1
-      - WG_ALLOWED_IPS=10.8.0.0/24,172.19.0.0/16,192.168.137.0/24
+      - WG_HOST=${WG_HOST}
+      - PASSWORD=${WG_PASSWORD}
+      - WG_PORT=${WG_PORT:-51820}
+      - WG_DEFAULT_ADDRESS=${WG_DEFAULT_ADDRESS:-10.8.0.x}
+      - WG_DEFAULT_DNS=${WG_DEFAULT_DNS:-1.1.1.1}
+      - WG_ALLOWED_IPS=${WG_ALLOWED_IPS:-10.8.0.0/24,172.19.0.0/16,192.168.137.0/24}
     ports:
       - "51820:51820/udp"
       - "51821:51821/tcp"
