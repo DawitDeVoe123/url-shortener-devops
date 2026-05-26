@@ -84,16 +84,16 @@ pipeline {
                     
                     // Test health endpoint
                     echo 'Testing application health endpoint...'
-                    sh "curl -f http://test-app-${BUILD_NUMBER}:8000/ || exit 1"
+                    sh "docker run --rm --network ${NETWORK_NAME} curlimages/curl -f http://test-app-${BUILD_NUMBER}:8000/ || exit 1"
                     
                     // Test API docs
                     echo 'Testing API documentation endpoint...'
-                    sh "curl -f http://test-app-${BUILD_NUMBER}:8000/docs || exit 1"
+                    sh "docker run --rm --network ${NETWORK_NAME} curlimages/curl -f http://test-app-${BUILD_NUMBER}:8000/docs || exit 1"
                     
                     // Test URL shortening
                     echo 'Testing URL shortening functionality...'
                     sh """
-                        RESPONSE=\$(curl -s -X POST http://test-app-${BUILD_NUMBER}:8000/shorten \\
+                        RESPONSE=\$(docker run --rm --network ${NETWORK_NAME} curlimages/curl -s -X POST http://test-app-${BUILD_NUMBER}:8000/shorten \\
                             -H "Content-Type: application/json" \\
                             -d '{"url": "https://example.com"}')
                         echo "Shorten response: \$RESPONSE"
