@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.env
+.venv
+
+# Docker
+*.log
+
+# IDE
+.idea/
+.vscode/

@@ -5,6 +5,7 @@ pipeline {
         APP_NAME = 'url-shortener'
         IMAGE_TAG = "${BUILD_NUMBER}"
         NETWORK_NAME = "test-net-${BUILD_NUMBER}"
+        DOCKER_HOST = "tcp://dind:2375"
     }
     
     options {

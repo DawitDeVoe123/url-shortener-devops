@@ -10,21 +10,36 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./db-init.sql:/docker-entrypoint-initdb.d/init-keycloak.sql
     restart: unless-stopped
+    networks:
+      - devops-network
 
   jenkins:
-    image: jenkins/jenkins:lts
+    build:
+      context: .
+      dockerfile: Jenkins.Dockerfile
     container_name: jenkins
-    privileged: true
-    user: root
     ports:
       - "8081:8080"
       - "50000:50000"
     volumes:
       - jenkins_data:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /usr/bin/docker:/usr/bin/docker
     restart: unless-stopped
+    networks:
+      - devops-network
+
+  dind:
+    image: docker:dind
+    container_name: dind
+    privileged: true
+    ports:
+      - "2375:2375"
+    environment:
+      - DOCKER_TLS_CERTDIR=""
+    restart: unless-stopped
+    networks:
+      - devops-network
 
   pgadmin:
     image: dpage/pgadmin4:latest
@@ -37,6 +52,8 @@ services:
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     restart: unless-stopped
+    networks:
+      - devops-network
 
   # URL Shortener App
   app:
@@ -79,6 +96,8 @@ services:
     ports:
       - "8080:8080"
     restart: unless-stopped
+    depends_on:
+      - db
     networks:
       - devops-network
 
