@@ -18,6 +18,9 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(title="URL Shortener")
 templates = Jinja2Templates(directory="app/templates")
 
+# Get BASE_URL from environment variable
+BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
+
 # Prometheus metrics
 REQUEST_COUNT = Counter('http_requests_total', 'Total HTTP requests', ['method', 'endpoint', 'status'])
 REQUEST_DURATION = Histogram('http_request_duration_seconds', 'HTTP request duration', ['method', 'endpoint'])
@@ -85,7 +88,7 @@ async def test_shorten_url(
     URLS_CREATED.inc()
     
     return {
-        "short_url": f"http://192.168.137.229:8000/{short_code}",
+        "short_url": f"{BASE_URL}/{short_code}",
         "short_code": short_code,
         "original_url": request_data.url
     }
@@ -115,7 +118,7 @@ async def shorten_url(
     URLS_CREATED.inc()
     
     return {
-        "short_url": f"http://192.168.137.229:8000/{short_code}",
+        "short_url": f"{BASE_URL}/{short_code}",
         "short_code": short_code,
         "original_url": request_data.url
     }
